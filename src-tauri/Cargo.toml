@@ -1,0 +1,27 @@
+[package]
+name = "friday"
+version = "0.1.0"
+description = "Friday - 科研向本地 AI 助手"
+authors = ["Friday Team"]
+license = "MIT"
+repository = ""
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+tauri-build = { version = "1.5", features = [] }
+
+[dependencies]
+tauri = { version = "1.5", features = ["shell-open", "dialog-open", "fs-read-file", "fs-write-file", "fs-read-dir", "fs-create-dir", "fs-remove-dir", "fs-remove-file", "fs-rename-file", "fs-exists", "path-all"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.35", features = ["full"] }
+uuid = { version = "1.6", features = ["v4", "serde"] }
+
+[features]
+# This feature is used for production builds or when `devPath` points to the filesystem
+# DO NOT REMOVE!!
+custom-protocol = ["tauri/custom-protocol"]
+
+

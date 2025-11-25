@@ -1,0 +1,15 @@
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.0
+sqlalchemy==2.0.23
+chromadb==0.4.18
+pymupdf==1.23.8
+pillow==10.1.0
+yt-dlp==2023.11.16
+faster-whisper==0.10.0
+openai==1.3.7
+anthropic==0.7.7
+google-generativeai==0.3.1
+python-dotenv==1.0.0
+aiofiles==23.2.1
+loguru==0.7.2
