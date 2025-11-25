@@ -432,5 +432,89 @@ Get-ChildItem src-tauri\icons
 
 ---
 
+## 9. Git 推送 SSL 连接错误
+
+### 问题描述
+
+执行 `git push` 时出现：
+
+```
+fatal: unable to access 'https://github.com/joeyxin-del/Friday.git/': 
+OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443
+```
+
+**原因：** Git 在通过 HTTPS 访问 GitHub 时 SSL 连接失败，可能是网络环境或代理配置问题。
+
+### 解决方案
+
+#### 步骤 1：配置 Git 使用代理
+
+如果系统已配置代理（如 Clash、V2Ray 在 7890 端口）：
+
+```powershell
+# 配置 HTTP 代理
+git config --global http.proxy http://127.0.0.1:7890
+git config --global https.proxy http://127.0.0.1:7890
+```
+
+#### 步骤 2：临时禁用 SSL 验证（解决 SSL 问题）
+
+```powershell
+git config --global http.sslVerify false
+```
+
+**注意：** 这会降低安全性，仅用于解决网络问题。如果可能，建议使用正确的 SSL 证书。
+
+#### 步骤 3：设置 HTTP 版本
+
+```powershell
+git config --global http.version HTTP/1.1
+```
+
+#### 步骤 4：重新推送
+
+```powershell
+git push --set-upstream origin master
+```
+
+### 验证
+
+配置完成后，检查 Git 配置：
+
+```powershell
+git config --global --list | Select-String -Pattern "proxy|ssl|http"
+```
+
+应该能看到：
+```
+http.proxy=http://127.0.0.1:7890
+https.proxy=http://127.0.0.1:7890
+http.sslverify=false
+http.version=HTTP/1.1
+```
+
+### 备用方案：使用 SSH
+
+如果 HTTPS 持续有问题，可以改用 SSH：
+
+1. 生成 SSH 密钥：
+```powershell
+ssh-keygen -t ed25519 -C "your_email@example.com"
+```
+
+2. 添加 SSH 密钥到 GitHub（复制 `~/.ssh/id_ed25519.pub` 内容）
+
+3. 更改远程 URL：
+```powershell
+git remote set-url origin git@github.com:joeyxin-del/Friday.git
+```
+
+4. 推送：
+```powershell
+git push --set-upstream origin master
+```
+
+---
+
 **最后更新：** 2024-01-01
 
