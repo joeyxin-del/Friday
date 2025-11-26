@@ -516,5 +516,105 @@ git push --set-upstream origin master
 
 ---
 
+## 10. Python 路径问题（PDF 解析失败）
+
+### 问题描述
+
+在 PDF 阅读器中点击"选择 PDF 文件"后，出现错误：
+
+```
+PDF 解析失败: Python error: Process exited with code 2
+Stdout: 
+Stderr: 
+```
+
+**原因：** Tauri 应用运行时无法找到 Python 或 conda 环境中的 Python 路径。
+
+### 解决方案
+
+#### 方法一：使用启动脚本（推荐）
+
+使用项目提供的启动脚本，它会自动激活 conda 环境并设置环境变量：
+
+```powershell
+.\start-dev.ps1
+```
+
+#### 方法二：手动激活环境
+
+**重要：** 必须在激活 conda 环境的终端中运行 Tauri 应用：
+
+```powershell
+# 1. 激活 conda 环境
+conda activate friday
+
+# 2. 验证 Python 路径
+python --version
+Get-Command python | Select-Object -ExpandProperty Source
+
+# 3. 设置环境变量（确保 Tauri 可以访问）
+$env:CONDA_PREFIX = (Get-Command python).Source | Split-Path -Parent
+
+# 4. 启动应用
+npm run tauri:dev
+```
+
+#### 方法三：硬编码 Python 路径（临时方案）
+
+如果上述方法都不行，可以临时修改 `src-tauri/src/python_bridge.rs`，硬编码 Python 路径：
+
+```rust
+let python_cmd = "D:\\anaconda3\\envs\\friday\\python.exe".to_string();
+```
+
+**注意：** 将路径替换为你的实际 Python 路径。
+
+#### 方法四：检查 Python 脚本路径
+
+确保 `python/main.py` 文件存在：
+
+```powershell
+Test-Path python\main.py
+```
+
+如果不存在，检查项目结构是否正确。
+
+### 验证
+
+1. **检查 Python 是否可用：**
+   ```powershell
+   python -c "import fitz; print('PyMuPDF OK')"
+   ```
+
+2. **检查环境变量：**
+   ```powershell
+   $env:CONDA_PREFIX
+   $env:CONDA_DEFAULT_ENV
+   ```
+
+3. **测试 Python 脚本：**
+   ```powershell
+   echo '{"cmd":"parse_pdf","payload":{"path":"test.pdf"}}' | python python/main.py
+   ```
+
+### 常见错误代码
+
+- **退出代码 2**：通常表示找不到 Python 命令或脚本文件
+- **退出代码 1**：Python 脚本执行出错（检查 stderr 输出）
+- **退出代码 0**：成功（但可能返回错误 JSON）
+
+### 调试技巧
+
+1. **查看详细错误信息：**
+   应用界面会显示更详细的错误信息，包括可能的解决方案。
+
+2. **检查 Rust 日志：**
+   在运行 `npm run tauri:dev` 的终端中查看 Rust 输出。
+
+3. **检查 Python 日志：**
+   Python 脚本的错误会输出到 stderr，检查终端输出。
+
+---
+
 **最后更新：** 2024-01-01
 

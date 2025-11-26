@@ -39,12 +39,37 @@ pub fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
-pub async fn parse_pdf(path: String) -> Result<Resource, String> {
-    // TODO: 调用 Python Sidecar 处理 PDF
+pub async fn parse_pdf(
+    path: String,
+    window: tauri::Window,
+) -> Result<Resource, String> {
     use crate::python_bridge;
-    let result = python_bridge::call_python("parse_pdf", serde_json::json!({ "path": path }))
+    
+    // 发送开始事件
+    let _ = window.emit("pdf-progress", serde_json::json!({
+        "stage": "开始",
+        "progress": 0,
+        "message": "正在初始化 PDF 解析..."
+    }));
+    
+    // 调用 Python Sidecar 处理 PDF（传递窗口用于进度事件）
+    let result = python_bridge::call_python("parse_pdf", serde_json::json!({ "path": path }), Some(window.clone()))
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            let _ = window.emit("pdf-progress", serde_json::json!({
+                "stage": "错误",
+                "progress": 0,
+                "message": format!("PDF 解析失败: {}", e)
+            }));
+            e.to_string()
+        })?;
+    
+    // 发送完成事件
+    let _ = window.emit("pdf-progress", serde_json::json!({
+        "stage": "完成",
+        "progress": 100,
+        "message": "PDF 解析完成"
+    }));
     
     serde_json::from_value(result.get("result").cloned().unwrap_or(serde_json::Value::Null))
         .map_err(|e| format!("Failed to parse result: {}", e))
@@ -54,7 +79,7 @@ pub async fn parse_pdf(path: String) -> Result<Resource, String> {
 pub async fn process_video(url: String) -> Result<Resource, String> {
     // TODO: 调用 Python Sidecar 处理视频
     use crate::python_bridge;
-    let result = python_bridge::call_python("process_video", serde_json::json!({ "url": url }))
+    let result = python_bridge::call_python("process_video", serde_json::json!({ "url": url }), None)
         .await
         .map_err(|e| e.to_string())?;
     
@@ -66,7 +91,7 @@ pub async fn process_video(url: String) -> Result<Resource, String> {
 pub async fn process_audio(path: String) -> Result<Resource, String> {
     // TODO: 调用 Python Sidecar 处理音频
     use crate::python_bridge;
-    let result = python_bridge::call_python("process_audio", serde_json::json!({ "path": path }))
+    let result = python_bridge::call_python("process_audio", serde_json::json!({ "path": path }), None)
         .await
         .map_err(|e| e.to_string())?;
     
@@ -78,7 +103,7 @@ pub async fn process_audio(path: String) -> Result<Resource, String> {
 pub async fn execute_command(command: String) -> Result<Task, String> {
     // TODO: 通过 Friday-Core 执行自然语言命令
     use crate::python_bridge;
-    let result = python_bridge::call_python("execute_command", serde_json::json!({ "command": command }))
+    let result = python_bridge::call_python("execute_command", serde_json::json!({ "command": command }), None)
         .await
         .map_err(|e| e.to_string())?;
     
